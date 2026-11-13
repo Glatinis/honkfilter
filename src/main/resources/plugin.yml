@@ -1,0 +1,49 @@
+name: Honkfilter
+description: $description
+version: '${version}'
+
+main: app.netlify.glatinis.honkfilter.Honkfilter
+api-version: '26.3'
+load: POSTWORLD
+
+authors: [ Glatinis ]
+website: https://glatinis.netlify.app
+
+commands:
+  honkfilter:
+    description: Manage the chat filter.
+    usage: /<command> <reload|add|remove|list|test>
+    aliases: [ hf ]
+    permission: honkfilter.admin
+
+permissions:
+  honkfilter.admin:
+    description: Use the /honkfilter command.
+    default: op
+  honkfilter.notify:
+    description: Get told when someone trips the filter.
+    default: op
+  honkfilter.bypass:
+    description: Skip every filter.
+    default: false
+    children:
+      honkfilter.bypass.words: true
+      honkfilter.bypass.links: true
+      honkfilter.bypass.caps: true
+      honkfilter.bypass.repeats: true
+      honkfilter.bypass.spam: true
+  honkfilter.bypass.words:
+    description: Skip the bad word filter.
+    default: false
+  honkfilter.bypass.links:
+    description: Skip the link filter.
+    default: false
+  honkfilter.bypass.caps:
+    description: Skip the caps filter.
+    default: false
+  honkfilter.bypass.repeats:
+    description: Skip the repeated character filter.
+    default: false
+  honkfilter.bypass.spam:
+    description: Skip the cooldown and repeated message filter.
+    default: false

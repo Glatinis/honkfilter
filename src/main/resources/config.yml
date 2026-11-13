@@ -1,0 +1,190 @@
+# Honkfilter
+# After editing this file, run /honkfilter reload (no restart needed).
+# Messages use MiniMessage colors: https://docs.advntr.dev/minimessage/format.html
+
+# The bad word filter.
+words:
+  # What happens to a message with a bad word in it:
+  #   censor = swap the bad word for the censor character and still send the message
+  #   block  = don't send the message at all
+  #   shadow = only the sender sees it, nobody else does
+  mode: "censor"
+  censor-character: "*"
+  # Tell the player when their message was censored.
+  warn-player: true
+
+  # Matched as WHOLE words only, so "class" or "assassin" are never touched.
+  # Add every spelling you want blocked here (fucking, fucker, shitty...).
+  blocked-words:
+    - "fuck"
+    - "fucking"
+    - "fucked"
+    - "fucker"
+    - "motherfucker"
+    - "shit"
+    - "shitty"
+    - "bullshit"
+    - "bitch"
+    - "bastard"
+    - "asshole"
+    - "ass"
+    - "arse"
+    - "dumbass"
+    - "jackass"
+    - "dick"
+    - "dickhead"
+    - "cock"
+    - "cunt"
+    - "piss"
+    - "whore"
+    - "slut"
+    - "twat"
+    - "wanker"
+    - "prick"
+    - "bollocks"
+
+  # Matched ANYWHERE inside a word. Only use this for words that never show up
+  # inside normal words, otherwise you get false positives.
+  blocked-partials:
+    - "fuck"
+
+  # Advanced: regular expressions, matched against the raw message (case insensitive).
+  blocked-regex: []
+
+  # Words that are always fine. These are skipped by the partial rules.
+  whitelist:
+    - "scunthorpe"
+    - "class"
+    - "classic"
+    - "assassin"
+    - "assess"
+    - "assist"
+    - "assume"
+    - "pass"
+    - "passage"
+    - "bass"
+    - "glass"
+    - "grass"
+    - "mass"
+    - "compass"
+    - "peacock"
+    - "cockpit"
+    - "hancock"
+    - "dickinson"
+    - "analysis"
+    - "analyst"
+
+  # Endings that are allowed on blocked-words, so "fucks" or "asses" still count.
+  # Keep this short. Longer endings make innocent words like "cocky" match.
+  allowed-suffixes:
+    - "s"
+    - "es"
+
+  # Catch stretched out words like "fuuuuck" without catching "as" for "ass".
+  repeated-letters: true
+
+  # Catch swapped characters like "sh1t" or "a$$".
+  # Numbers on their own (like 455) are never flagged.
+  leet-speak:
+    enabled: true
+    replacements:
+      "0": "o"
+      "1": "i"
+      "3": "e"
+      "4": "a"
+      "5": "s"
+      "7": "t"
+      "@": "a"
+      "$": "s"
+
+  # Catch spaced out words like "f u c k" or "f.u.c.k".
+  spaced-letters:
+    enabled: true
+    minimum-letters: 3
+
+# Too many capital letters.
+caps:
+  enabled: true
+  # Messages shorter than this are ignored.
+  minimum-length: 8
+  # Percent of letters that may be capitals.
+  max-percent: 70
+  # lowercase = fix the message, block = don't send it
+  action: "lowercase"
+
+# Stretched out characters like "heyyyyyyyy" or "!!!!!!!!!".
+repeated-characters:
+  enabled: true
+  max-allowed: 4
+
+# Chat spam.
+spam:
+  enabled: true
+  cooldown-seconds: 1.0
+  block-repeated-messages: true
+  repeat-window-seconds: 10
+
+# Advertising and links.
+links:
+  enabled: false
+  # block = don't send the message, censor = hide just the link
+  action: "block"
+  # A link that contains one of these is allowed.
+  allowed-domains: []
+  patterns:
+    - "(?:https?://|www\\.)\\S+"
+    - "\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
+    - "\\b[a-z0-9-]+\\.(?:com|net|org|gg|io|xyz|me|co|ru|tk|ml|club|fun|tv|us|uk|de|eu)\\b"
+
+# Also filter these commands (like private messages).
+commands:
+  enabled: true
+  list:
+    - "msg"
+    - "tell"
+    - "w"
+    - "whisper"
+    - "r"
+    - "reply"
+    - "me"
+
+# Run commands when a player keeps tripping the word or link filter.
+punishments:
+  enabled: false
+  # Violations older than this stop counting.
+  window-seconds: 300
+  # The key is the violation number, {player} is replaced with the name.
+  steps:
+    "3":
+      - "tempmute {player} 10m Watch your language"
+    "6":
+      - "tempmute {player} 1h Watch your language"
+
+# Tell staff (honkfilter.notify) when someone trips the word or link filter.
+notify-staff:
+  enabled: true
+
+messages:
+  blocked-words: "<red>Uh oh! Your message was blocked because of language. Please keep chat friendly."
+  censored-words: "<yellow>Heads up! Part of your message was censored."
+  blocked-links: "<red>Uh oh! Links and ads are not allowed in chat."
+  blocked-caps: "<red>Please don't shout! Your message was blocked."
+  blocked-cooldown: "<red>Slow down! You can chat again in <seconds> seconds."
+  blocked-repeat: "<red>Please don't repeat the same message."
+  staff-notify: "<gray>[<red>Honkfilter</red>] <white><player></white> tripped the <yellow><filter></yellow> filter: <gray><detail>"
+  reloaded: "<green>Honkfilter reloaded."
+  reload-warning: "<yellow>Warning: <warning>"
+  reload-failed: "<red>Uh oh! Could not reload, keeping the old rules. Check the console."
+  no-permission: "<red>You don't have permission to do that."
+  usage: "<red>Usage: <usage>"
+  unknown-list: "<red>Unknown list. Pick one of: <lists>"
+  added: "<green>Added <white><word></white> to <white><list></white>."
+  already-added: "<yellow><white><word></white> is already in <white><list></white>."
+  removed: "<green>Removed <white><word></white> from <white><list></white>."
+  not-in-list: "<yellow><white><word></white> is not in <white><list></white>."
+  list-header: "<gray>Entries in <white><list></white>:"
+  list-entries: "<white><entries>"
+  list-empty: "<gray>That list is empty."
+  test-clean: "<green>Nothing would be flagged."
+  test-flagged: "<yellow>Flagged: <white><matches></white>"
+  test-result: "<gray>Result: <white><result>"
