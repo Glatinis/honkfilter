@@ -1,0 +1,182 @@
+# glatinis-portal release workflow v3
+# Builds the plugin when the version changes on main (or on a pushed v* tag),
+# publishes a GitHub Release with the jar, then tells the portal.
+# Remove the first line to stop the portal updating this file.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - gradle.properties
+      - build.gradle.kts
+      - build.gradle
+      - pom.xml
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  PORTAL_URL: https://glatinis-portal.netlify.app
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: tag
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#v}"
+          else
+            VERSION=""
+            if [ -f gradle.properties ]; then
+              VERSION="$(grep -m1 -E '^[[:space:]]*version[[:space:]]*=' gradle.properties | sed -E 's/^[^=]*=//' | tr -d " \"'\r" || true)"
+            fi
+            if [ -z "$VERSION" ]; then
+              VERSION="$(grep -hm1 -E '^[[:space:]]*version[[:space:]]*=' build.gradle.kts build.gradle 2>/dev/null | head -n1 | sed -E 's/^[^=]*=//' | tr -d " \"'\r" || true)"
+            fi
+            if [ -z "$VERSION" ] && [ -f pom.xml ]; then
+              VERSION="$(mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null || true)"
+            fi
+            if [ -z "$VERSION" ]; then
+              echo "Could not read the version, skipping the release"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            TAG="v$VERSION"
+
+            # Only release a version that hasn't been released yet.
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null 2>&1; then
+              echo "$TAG already exists, skipping the release"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" == *-* ]]; then PRERELEASE=true; else PRERELEASE=false; fi
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+          NOTES=""
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # Checkout can leave the tag lightweight, so fetch the real tag object.
+            git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+            if [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+              NOTES="$(git for-each-ref --format='%(contents:subject)%0a%0a%(contents:body)' "refs/tags/$TAG" | sed '/-----BEGIN/,$d')"
+            fi
+          else
+            # Use the commit titles since the last release.
+            PREVIOUS="$(git tag --merged HEAD --list 'v*' --sort=-v:refname | head -n1)"
+            NOTES="$(git log --no-merges --format='- %s' "${PREVIOUS:+$PREVIOUS..}HEAD")"
+          fi
+          if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
+            NOTES="Bug fixes and improvements."
+          fi
+          printf '%s\n' "$NOTES" > "$RUNNER_TEMP/release-notes.md"
+
+      - name: Detect Java version
+        if: steps.tag.outputs.skip != 'true'
+        id: java
+        shell: bash
+        run: |
+          JAVA="$(grep -hoE 'JavaLanguageVersion\.of\(\s*[0-9]+' build.gradle.kts build.gradle 2>/dev/null | grep -oE '[0-9]+$' | head -n1 || true)"
+          if [ -z "$JAVA" ] && [ -f pom.xml ]; then
+            JAVA="$(grep -hoE '<(maven\.compiler\.release|release|java\.version)>[0-9]+' pom.xml | grep -oE '[0-9]+$' | head -n1 || true)"
+          fi
+          echo "version=${JAVA:-21}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java.outputs.version }}
+
+      - name: Set up Gradle
+        if: steps.tag.outputs.skip != 'true' && hashFiles('gradlew') != ''
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        if: steps.tag.outputs.skip != 'true'
+        id: build
+        shell: bash
+        run: |
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            if ./gradlew help --task shadowJar -q > /dev/null 2>&1; then
+              ./gradlew shadowJar --no-daemon
+            else
+              ./gradlew build --no-daemon
+            fi
+            echo "dir=build/libs" >> "$GITHUB_OUTPUT"
+          else
+            mvn -B package
+            echo "dir=target" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pick the jar
+        if: steps.tag.outputs.skip != 'true'
+        id: jar
+        shell: bash
+        run: |
+          JAR="$(ls -S "${{ steps.build.outputs.dir }}"/*.jar | grep -vE -- '-(sources|javadoc|plain)\.jar$|/original-' | head -n1)"
+          if [ -z "$JAR" ]; then echo "No jar found" >&2; exit 1; fi
+
+          DESCRIPTOR="$(find . -path ./build -prune -o -path '*/src/main/resources/*' \( -name plugin.yml -o -name paper-plugin.yml \) -print | head -n1)"
+          NAME=""
+          if [ -n "$DESCRIPTOR" ]; then
+            NAME="$(grep -m1 -E '^name:' "$DESCRIPTOR" | sed -E 's/^name:[[:space:]]*//; s/^["'\'']//; s/["'\'']$//; s/[[:space:]]+$//')"
+          fi
+          NAME="${NAME:-${GITHUB_REPOSITORY#*/}}"
+
+          mkdir -p dist
+          cp "$JAR" "dist/${NAME}-${{ steps.tag.outputs.version }}.jar"
+          echo "file=dist/${NAME}-${{ steps.tag.outputs.version }}.jar" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        if: steps.tag.outputs.skip != 'true' && github.ref_type != 'tag'
+        shell: bash
+        run: |
+          git tag "${{ steps.tag.outputs.tag }}" "$GITHUB_SHA"
+          git push origin "refs/tags/${{ steps.tag.outputs.tag }}"
+
+      - name: Publish release
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FLAGS=()
+          if [ "${{ steps.tag.outputs.prerelease }}" = "true" ]; then FLAGS+=(--prerelease); fi
+          gh release create "${{ steps.tag.outputs.tag }}" "${{ steps.jar.outputs.file }}" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --verify-tag "${FLAGS[@]}"
+
+      - name: Tell the portal
+        if: steps.tag.outputs.skip != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          TOKEN="$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=glatinis-portal" | jq -r .value)"
+          curl -sSf --max-time 30 -X POST -H "Authorization: Bearer $TOKEN" "$PORTAL_URL/api/notify"
