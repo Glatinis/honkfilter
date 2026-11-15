@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -106,6 +107,43 @@ public final class WordMatcher {
         }
 
         return sb.toString();
+    }
+
+    public static String replace(String text, List<Match> matches, List<String> replacements) {
+        if (matches.isEmpty() || replacements.isEmpty()) {
+            return text;
+        }
+
+        List<Match> sorted = matches.stream().sorted(Comparator.comparingInt(Match::start)).toList();
+        StringBuilder sb = new StringBuilder();
+        int cursor = 0;
+        int i = 0;
+
+        while (i < sorted.size()) {
+            int start = sorted.get(i).start();
+            int end = sorted.get(i).end();
+
+            while (i + 1 < sorted.size() && sorted.get(i + 1).start() <= end) {
+                end = Math.max(end, sorted.get(i + 1).end());
+                i++;
+            }
+
+            i++;
+
+            if (start < cursor) {
+                continue;
+            }
+
+            String original = text.substring(start, end);
+            String word = replacements.get(ThreadLocalRandom.current().nextInt(replacements.size()));
+            boolean shouting = original.chars().filter(Character::isLetter).count() > 1
+                    && original.chars().filter(Character::isLetter).allMatch(Character::isUpperCase);
+
+            sb.append(text, cursor, start).append(shouting ? word.toUpperCase() : word);
+            cursor = end;
+        }
+
+        return sb.append(text, cursor, text.length()).toString();
     }
 
     public static List<String> distinctWords(List<Match> matches) {

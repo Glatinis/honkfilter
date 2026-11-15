@@ -57,6 +57,29 @@ class WordMatcherTest {
     }
 
     @Test
+    void badWordsAreReplacedWithHonk() {
+        String text = "well that is shit, but class is fine";
+        assertEquals("well that is honk, but class is fine", WordMatcher.replace(text, matcher.find(text), java.util.List.of("honk")));
+    }
+
+    @Test
+    void replacementHandlesStretchedSpacedAndShoutedWords() {
+        java.util.List<String> honk = java.util.List.of("honk");
+
+        assertEquals("honk this", WordMatcher.replace("fuuuuuck this", matcher.find("fuuuuuck this"), honk));
+        assertEquals("oh honk it", WordMatcher.replace("oh f u c k it", matcher.find("oh f u c k it"), honk));
+        assertEquals("HONK YOU", WordMatcher.replace("FUCK YOU", matcher.find("FUCK YOU"), honk));
+        assertEquals("honk honk", WordMatcher.replace("fuck shit", matcher.find("fuck shit"), honk));
+    }
+
+    @Test
+    void replacementWordsComeFromTheList() {
+        String text = "oh shit";
+        String out = WordMatcher.replace(text, matcher.find(text), java.util.List.of("honk", "beep"));
+        assertTrue(out.equals("oh honk") || out.equals("oh beep"), out);
+    }
+
+    @Test
     void censorCoversTheWholeBadWord() {
         String text = "fuuuuuck this";
         assertEquals("******** this", WordMatcher.censor(text, matcher.find(text), '*'));
