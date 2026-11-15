@@ -11,6 +11,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 import java.util.List;
@@ -148,6 +149,10 @@ public class HonkfilterCommand implements CommandExecutor, TabCompleter {
         if (args.length < 2) {
             usage(sender, "/" + label + " test <text>");
             return;
+        }
+
+        if (sender instanceof Player plr && filters.bypasses(plr, "words")) {
+            sender.sendMessage(config.getMessage("test-bypass"));
         }
 
         String text = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
