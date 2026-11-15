@@ -17,7 +17,7 @@ A chat filter for Paper servers that blocks bad language without censoring innoc
 ## Setup
 
 1. Stop the server.
-2. Drop `Honkfilter-1.1.0.jar` into the `plugins` folder.
+2. Drop `Honkfilter-1.1.1.jar` into the `plugins` folder.
 3. Start the server once to generate `plugins/Honkfilter/config.yml`.
 4. Edit the config (see below), then run `/honkfilter reload` or restart.
 
