@@ -44,6 +44,10 @@ public class FilterManager {
         return matcher;
     }
 
+    public boolean bypasses(Player plr, String filter) {
+        return config.isBypassEnabled() && plr.hasPermission("honkfilter.bypass." + filter);
+    }
+
     public void forget(UUID id) {
         lastMessageTime.remove(id);
         lastMessage.remove(id);
@@ -52,7 +56,7 @@ public class FilterManager {
     public FilterResult process(Player plr, String text, boolean chat) {
         String current = text;
 
-        if (chat && config.isSpamEnabled() && !plr.hasPermission("honkfilter.bypass.spam")) {
+        if (chat && config.isSpamEnabled() && !bypasses(plr, "spam")) {
             FilterResult spam = checkSpam(plr, text);
 
             if (spam != null) {
@@ -60,7 +64,7 @@ public class FilterManager {
             }
         }
 
-        if (config.isLinksEnabled() && !plr.hasPermission("honkfilter.bypass.links")) {
+        if (config.isLinksEnabled() && !bypasses(plr, "links")) {
             List<Match> links = findLinks(current);
 
             if (!links.isEmpty()) {
@@ -74,7 +78,7 @@ public class FilterManager {
             }
         }
 
-        if (chat && config.isRepeatedCharactersEnabled() && !plr.hasPermission("honkfilter.bypass.repeats")) {
+        if (chat && config.isRepeatedCharactersEnabled() && !bypasses(plr, "repeats")) {
             current = shorten(current, config.getMaxRepeatedCharacters());
         }
 
@@ -83,7 +87,7 @@ public class FilterManager {
         String violation = null;
         String detail = "";
 
-        if (!plr.hasPermission("honkfilter.bypass.words")) {
+        if (!bypasses(plr, "words")) {
             List<Match> bad = matcher.find(current);
 
             if (!bad.isEmpty()) {
@@ -108,7 +112,7 @@ public class FilterManager {
             }
         }
 
-        if (chat && config.isCapsEnabled() && !plr.hasPermission("honkfilter.bypass.caps") && tooLoud(current)) {
+        if (chat && config.isCapsEnabled() && !bypasses(plr, "caps") && tooLoud(current)) {
             if (config.getCapsAction().equals("block")) {
                 return FilterResult.block(text, "blocked-caps", null, "");
             }

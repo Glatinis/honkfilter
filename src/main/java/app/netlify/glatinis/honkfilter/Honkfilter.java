@@ -3,6 +3,7 @@ package app.netlify.glatinis.honkfilter;
 import app.netlify.glatinis.honkfilter.commands.HonkfilterCommand;
 import app.netlify.glatinis.honkfilter.listeners.ChatListener;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -16,7 +17,11 @@ public final class Honkfilter extends JavaPlugin {
 
         config.validate().forEach(w -> getLogger().warning("Uh oh! " + w));
 
-        getServer().getPluginManager().registerEvents(new ChatListener(this, config, filters, violations), this);
+        ChatListener chat = new ChatListener(this, config, filters, violations);
+
+        getServer().getPluginManager().registerEvents(chat, this);
+        getServer().getPluginManager().registerEvent(AsyncChatEvent.class, chat, config.getChatPriority(),
+                (l, e) -> chat.onChat((AsyncChatEvent) e), this, true);
 
         HonkfilterCommand command = new HonkfilterCommand(this, config, filters);
         PluginCommand honkfilter = getCommand("honkfilter");

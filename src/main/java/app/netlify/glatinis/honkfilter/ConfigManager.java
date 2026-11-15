@@ -7,6 +7,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.event.EventPriority;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,10 @@ public class ConfigManager {
             warnings.add("words.mode must be censor, block or shadow. Using censor.");
         }
 
+        if (!Set.of("LOWEST", "LOW", "NORMAL", "HIGH", "HIGHEST").contains(plugin.getConfig().getString("chat-priority", "LOWEST").trim().toUpperCase(Locale.ROOT))) {
+            warnings.add("chat-priority must be LOWEST, LOW, NORMAL, HIGH or HIGHEST. Using LOWEST.");
+        }
+
         if (!CENSOR_STYLES.contains(raw("words.censor-style"))) {
             warnings.add("words.censor-style must be replace or mask. Using replace.");
         }
@@ -64,6 +69,14 @@ public class ConfigManager {
         }
 
         return warnings;
+    }
+
+    public boolean isBypassEnabled() {
+        return plugin.getConfig().getBoolean("bypass.enabled", true);
+    }
+
+    public EventPriority getChatPriority() {
+        return parsePriority(plugin.getConfig().getString("chat-priority", "LOWEST"));
     }
 
     public Rules getWordRules() {
@@ -212,6 +225,15 @@ public class ConfigManager {
         plugin.getConfig().set(path, list);
         plugin.saveConfig();
         return true;
+    }
+
+    private EventPriority parsePriority(String value) {
+        try {
+            EventPriority priority = EventPriority.valueOf(value.trim().toUpperCase(Locale.ROOT));
+            return priority == EventPriority.MONITOR ? EventPriority.LOWEST : priority;
+        } catch (IllegalArgumentException e) {
+            return EventPriority.LOWEST;
+        }
     }
 
     private String raw(String path) {

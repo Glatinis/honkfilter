@@ -33,7 +33,6 @@ public class ChatListener implements Listener {
         this.violations = violations;
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onChat(AsyncChatEvent e) {
         try {
             handleChat(e);

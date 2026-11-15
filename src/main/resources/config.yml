@@ -2,6 +2,18 @@
 # After editing this file, run /honkfilter reload (no restart needed).
 # Messages use MiniMessage colors: https://docs.advntr.dev/minimessage/format.html
 
+# Players with a honkfilter.bypass permission skip the filters.
+# Careful: the "*" permission (many Owner and Admin ranks have it) includes the bypass permissions,
+# so those players are never filtered. Set enabled to false to filter everyone no matter what
+# permissions they have. /honkfilter test tells you if you are bypassing.
+bypass:
+  enabled: true
+
+# When the filter runs on chat: LOWEST, LOW, NORMAL, HIGH or HIGHEST.
+# LOWEST runs first, before most chat plugins. Change this only if another chat plugin is
+# showing messages unfiltered.
+chat-priority: "LOWEST"
+
 # The bad word filter.
 words:
   # What happens to a message with a bad word in it:
@@ -193,6 +205,7 @@ messages:
   list-header: "<gray>Entries in <white><list></white>:"
   list-entries: "<white><entries>"
   list-empty: "<gray>That list is empty."
+  test-bypass: "<yellow>Heads up! You have a bypass permission, so your own chat is never filtered. Set bypass.enabled to false in the config to filter everyone."
   test-clean: "<green>Nothing would be flagged."
   test-flagged: "<yellow>Flagged: <white><matches></white>"
   test-result: "<gray>Result: <white><result>"
