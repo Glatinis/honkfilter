@@ -99,7 +99,7 @@ public class FilterManager {
                 if (mode.equals("shadow")) {
                     shadow = true;
                 } else {
-                    current = WordMatcher.censor(current, bad, config.getCensorCharacter());
+                    current = censor(current, bad);
                 }
 
                 if (config.isWarnPlayer()) {
@@ -117,6 +117,14 @@ public class FilterManager {
         }
 
         return new FilterResult(current, null, warning, shadow, violation, detail);
+    }
+
+    public String censor(String text, List<Match> matches) {
+        if (config.getCensorStyle().equals("replace")) {
+            return WordMatcher.replace(text, matches, config.getReplacementWords());
+        }
+
+        return WordMatcher.censor(text, matches, config.getCensorCharacter());
     }
 
     private FilterResult checkSpam(Player plr, String text) {

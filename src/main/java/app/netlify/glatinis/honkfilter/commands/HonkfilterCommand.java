@@ -159,7 +159,7 @@ public class HonkfilterCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage(config.getMessage("test-flagged", Placeholder.unparsed("matches", String.join(", ", WordMatcher.distinctWords(found)))));
-        sender.sendMessage(config.getMessage("test-result", Placeholder.unparsed("result", WordMatcher.censor(text, found, config.getCensorCharacter()))));
+        sender.sendMessage(config.getMessage("test-result", Placeholder.unparsed("result", filters.censor(text, found))));
     }
 
     private boolean usage(CommandSender sender, String usage) {

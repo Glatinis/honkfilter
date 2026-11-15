@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class ConfigManager {
 
     private static final Set<String> WORD_MODES = Set.of("censor", "block", "shadow");
+    private static final Set<String> CENSOR_STYLES = Set.of("replace", "mask");
     private static final Set<String> CAPS_ACTIONS = Set.of("lowercase", "block");
     private static final Set<String> LINK_ACTIONS = Set.of("block", "censor");
 
@@ -36,6 +37,10 @@ public class ConfigManager {
 
         if (!WORD_MODES.contains(raw("words.mode"))) {
             warnings.add("words.mode must be censor, block or shadow. Using censor.");
+        }
+
+        if (!CENSOR_STYLES.contains(raw("words.censor-style"))) {
+            warnings.add("words.censor-style must be replace or mask. Using replace.");
         }
 
         if (!CAPS_ACTIONS.contains(raw("caps.action"))) {
@@ -68,6 +73,18 @@ public class ConfigManager {
 
     public String getWordMode() {
         return pick("words.mode", WORD_MODES, "censor");
+    }
+
+    public String getCensorStyle() {
+        return pick("words.censor-style", CENSOR_STYLES, "replace");
+    }
+
+    public List<String> getReplacementWords() {
+        List<String> words = plugin.getConfig().getStringList("words.replacement-words").stream()
+                .filter(w -> !w.isBlank())
+                .toList();
+
+        return words.isEmpty() ? List.of("honk") : words;
     }
 
     public char getCensorCharacter() {

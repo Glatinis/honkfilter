@@ -9,6 +9,14 @@ words:
   #   block  = don't send the message at all
   #   shadow = only the sender sees it, nobody else does
   mode: "censor"
+  # How censor mode hides a bad word:
+  #   replace = swap it for a word from replacement-words (honk by default)
+  #   mask    = swap every letter for the censor character
+  censor-style: "replace"
+  # Used by replace. If you list more than one, a random one is picked each time.
+  # An ALL CAPS bad word gets an ALL CAPS replacement.
+  replacement-words:
+    - "honk"
   censor-character: "*"
   # Tell the player when their message was censored.
   warn-player: true
