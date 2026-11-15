@@ -48,11 +48,18 @@ Requires Paper 26.3 and Java 25.
 | `honkfilter.bypass.repeats` | Skip the repeated character filter. | Nobody |
 | `honkfilter.bypass.spam` | Skip the cooldown and repeated message filter. | Nobody |
 
-Nobody has the bypass permissions by default, not even OPs, so you can test the filter on yourself. Give them to staff with your permissions plugin.
+Nobody has the bypass permissions by default, not even OPs, so you can test the filter on yourself. Give them to staff with your permissions plugin. Players with the `*` permission have them too, unless you set `bypass.enabled: false`.
 
 ## Config
 
 ```yaml
+# false = filter everyone, even players with the * permission
+bypass:
+  enabled: true
+
+# LOWEST, LOW, NORMAL, HIGH or HIGHEST
+chat-priority: "LOWEST"
+
 words:
   # censor = swap the bad word for the censor character and still send it
   # block  = don't send the message at all
@@ -148,9 +155,13 @@ Blocked words only match whole words. If you add `fuck` it will not catch `fucki
 
 Run `/honkfilter test <text>` to see which rule caught it. If it came from a partial rule, add the real word to the whitelist. If it came from a blocked word, check `allowed-suffixes`, since longer endings can make innocent words match.
 
-### I am an OP and my messages are filtered. Is that a bug?
+### My own messages are never filtered, but `/honkfilter test` works. Why?
 
-No. Nobody bypasses the filter by default so you can test it. Give yourself `honkfilter.bypass` to skip it.
+You have a bypass permission. The `*` permission (Owner and Admin ranks often have it) includes `honkfilter.bypass`, so those players skip every filter. `/honkfilter test` now warns you when this is the case. To filter everyone no matter what permissions they have, set `bypass.enabled: false` in the config and run `/honkfilter reload`.
+
+### Another chat plugin is showing messages unfiltered.
+
+Set `chat-priority` in the config. `LOWEST` (the default) runs before most chat plugins. If a chat plugin still shows the original message, try `LOW` or `NORMAL`, and tell me which plugin it is.
 
 ### What happens if I make a mistake in the config?
 
