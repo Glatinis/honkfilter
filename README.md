@@ -7,6 +7,7 @@ A chat filter for Paper servers that blocks bad language without censoring innoc
 - Matches whole words by default, so `class`, `assassin`, `Scunthorpe` and `cockpit` are never touched.
 - Catches sneaky spellings like `fuuuuck`, `sh1t`, `a$$`, `f u c k` and `f.u.c.k`.
 - Three ways to handle a bad word: censor it, block the message, or shadow it so only the sender sees it.
+- Censored words are replaced with `honk` by default. Change the replacement word (or a list to pick from at random), or switch back to `****`.
 - Optional partial rules for words that must be caught inside other words, with a whitelist to keep real words safe.
 - Extra filters for too many capitals, stretched out characters, chat spam, repeated messages and links.
 - Filters private message commands like `/msg` too.
@@ -57,6 +58,11 @@ words:
   # block  = don't send the message at all
   # shadow = only the sender sees it, nobody else does
   mode: "censor"
+  # replace = swap the word for a replacement word, mask = swap every letter for the censor character
+  censor-style: "replace"
+  # If you list more than one, a random one is picked each time.
+  replacement-words:
+    - "honk"
   censor-character: "*"
   warn-player: true
 
@@ -129,6 +135,10 @@ punishments:
 The full file has every option, every message and a comment on each setting. Messages use [MiniMessage](https://docs.advntr.dev/minimessage/format.html) colors.
 
 ## FAQ
+
+### How do I make censored words show up as honk, or something else?
+
+Any word you add to `blocked-words` is replaced with the first entry of `replacement-words`, which is `honk` by default. Change that list to use your own word, add several to pick one at random, or set `censor-style: "mask"` to get `****` instead. An ALL CAPS bad word gets an ALL CAPS replacement.
 
 ### Why was a word I added not caught?
 
